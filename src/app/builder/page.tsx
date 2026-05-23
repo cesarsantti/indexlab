@@ -127,13 +127,19 @@ function BuilderContent() {
   const [sectorCap, setSectorCap] = useState(35);
   const [factorTilt, setFactorTilt] = useState("momentum");
   const [generating, setGenerating] = useState(false);
+  const [sourceEtf, setSourceEtf] = useState<string | null>(null);
 
-  // One-time mount: consume prompt stored by ETF Analyzer handoff
+  // One-time mount: consume handoff keys written by ETF Analyzer
   useEffect(() => {
-    const stored = localStorage.getItem("indexlab_builder_prompt");
-    if (stored && !initialPrompt) {
+    const storedPrompt = localStorage.getItem("indexlab_builder_prompt");
+    const storedEtf = localStorage.getItem("indexlab_source_etf");
+    if (storedPrompt && !initialPrompt) {
       localStorage.removeItem("indexlab_builder_prompt");
-      setPrompt(stored);
+      setPrompt(storedPrompt);
+    }
+    if (storedEtf) {
+      localStorage.removeItem("indexlab_source_etf");
+      setSourceEtf(storedEtf);
     }
   }, [initialPrompt]);
 
@@ -169,6 +175,7 @@ function BuilderContent() {
         concentrationLimit: maxWeight,
       };
       const finalIndex = generateIndex(finalStrategy);
+      if (sourceEtf) finalIndex.sourceEtf = sourceEtf;
       saveIndex(finalIndex);
     }
     await new Promise((r) => setTimeout(r, 1200));

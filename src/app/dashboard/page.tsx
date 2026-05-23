@@ -7,6 +7,7 @@ import { HoldingsTable } from "@/components/dashboard/holdings-table";
 import { FactorExposure } from "@/components/dashboard/factor-exposure";
 import { SectorAllocation } from "@/components/dashboard/sector-allocation";
 import { RebalancePanel } from "@/components/dashboard/rebalance-panel";
+import { ETFComparison } from "@/components/dashboard/etf-comparison";
 import { Badge } from "@/components/ui/badge";
 import { loadIndex } from "@/lib/strategy-store";
 import { GeneratedIndex } from "@/lib/index-generator";
@@ -138,6 +139,8 @@ export default function DashboardPage() {
       </div>
 
       <RebalancePanel />
+
+      {idx?.sourceEtf && <ETFComparison generated={idx} />}
     </div>
   );
 }

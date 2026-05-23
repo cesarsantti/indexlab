@@ -45,8 +45,9 @@ export default function ETFAnalyzerPage() {
   const [copied, setCopied] = useState(false);
   const router = useRouter();
 
-  const handleBuild = (prompt: string) => {
+  const handleBuild = (prompt: string, ticker: string) => {
     localStorage.setItem("indexlab_builder_prompt", prompt);
+    localStorage.setItem("indexlab_source_etf", ticker);
     router.push("/builder");
   };
 
@@ -282,7 +283,7 @@ export default function ETFAnalyzerPage() {
               </div>
               <div className="flex flex-col gap-2">
                 <button
-                  onClick={() => handleBuild(analysis.alternativePrompt)}
+                  onClick={() => handleBuild(analysis.alternativePrompt, analysis.ticker)}
                   className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 px-4 py-3 text-sm font-semibold text-white transition-all shadow-lg shadow-emerald-900/30 cursor-pointer"
                 >
                   Build This Alternative

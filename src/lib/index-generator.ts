@@ -78,6 +78,7 @@ export interface GeneratedIndex {
   rebalanceExplanation: string;
   benchmark: string;
   generatedAt: string;
+  sourceEtf?: string;
 }
 
 // ── Colors ────────────────────────────────────────────────────────────────────
