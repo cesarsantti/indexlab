@@ -1,3 +1,5 @@
+"use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { PerformanceChart } from "@/components/dashboard/performance-chart";
@@ -6,63 +8,93 @@ import { FactorExposure } from "@/components/dashboard/factor-exposure";
 import { SectorAllocation } from "@/components/dashboard/sector-allocation";
 import { RebalancePanel } from "@/components/dashboard/rebalance-panel";
 import { Badge } from "@/components/ui/badge";
+import { loadIndex } from "@/lib/strategy-store";
+import { GeneratedIndex } from "@/lib/index-generator";
 
-const metrics = [
-  {
-    label: "1Y Return",
-    value: "+68.4%",
-    subvalue: "vs +26.3% SPY",
-    trend: "up" as const,
-    accentColor: "border-t-emerald-500",
-    description: "12-month trailing",
-  },
-  {
-    label: "Annualized Vol",
-    value: "28.6%",
-    subvalue: "vs 15.2% SPY",
-    trend: "neutral" as const,
-    accentColor: "border-t-amber-500",
-    description: "252-day rolling",
-  },
-  {
-    label: "Sharpe Ratio",
-    value: "1.84",
-    subvalue: "vs 1.12 SPY",
-    trend: "up" as const,
-    accentColor: "border-t-blue-500",
-    description: "Risk-adjusted return",
-  },
-  {
-    label: "Max Drawdown",
-    value: "-48.2%",
-    subvalue: "Jan–Jul 2022",
-    trend: "down" as const,
-    accentColor: "border-t-red-500",
-    description: "Peak-to-trough",
-  },
-  {
-    label: "Annual Turnover",
-    value: "22.4%",
-    subvalue: "Low churn",
-    trend: "neutral" as const,
-    accentColor: "border-t-violet-500",
-    description: "Portfolio efficiency",
-  },
+const DEFAULT_METRICS = [
+  { label: "1Y Return",       value: "+68.4%", subvalue: "vs +26.3% SPY",  trend: "up" as const,      accentColor: "border-t-emerald-500", description: "12-month trailing" },
+  { label: "Annualized Vol",  value: "28.6%",  subvalue: "vs 15.2% SPY",   trend: "neutral" as const,  accentColor: "border-t-amber-500",   description: "252-day rolling" },
+  { label: "Sharpe Ratio",    value: "1.84",   subvalue: "vs 1.12 SPY",    trend: "up" as const,      accentColor: "border-t-blue-500",    description: "Risk-adjusted return" },
+  { label: "Max Drawdown",    value: "-48.2%", subvalue: "Jan–Jul 2022",   trend: "down" as const,    accentColor: "border-t-red-500",     description: "Peak-to-trough" },
+  { label: "Annual Turnover", value: "22.4%",  subvalue: "Low churn",      trend: "neutral" as const,  accentColor: "border-t-violet-500",  description: "Portfolio efficiency" },
 ];
 
+function capitalize(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 export default function DashboardPage() {
+  const [generatedIndex, setGeneratedIndex] = useState<GeneratedIndex | null>(null);
+
+  useEffect(() => {
+    const saved = loadIndex();
+    if (saved) setGeneratedIndex(saved);
+  }, []);
+
+  const idx = generatedIndex;
+  const metrics = idx
+    ? [
+        {
+          label: "1Y Return",
+          value: `${idx.metrics.oneYearReturn >= 0 ? "+" : ""}${idx.metrics.oneYearReturn}%`,
+          subvalue: `vs +26.3% ${idx.benchmark}`,
+          trend: (idx.metrics.oneYearReturn >= 0 ? "up" : "down") as "up" | "down",
+          accentColor: "border-t-emerald-500",
+          description: "12-month trailing",
+        },
+        {
+          label: "Annualized Vol",
+          value: `${idx.metrics.volatility}%`,
+          subvalue: `Avg β ${idx.metrics.avgBeta.toFixed(2)}`,
+          trend: "neutral" as const,
+          accentColor: "border-t-amber-500",
+          description: "252-day rolling",
+        },
+        {
+          label: "Sharpe Ratio",
+          value: idx.metrics.sharpeRatio.toString(),
+          subvalue: idx.metrics.sharpeRatio >= 1.5 ? "Excellent" : idx.metrics.sharpeRatio >= 1 ? "Good" : "Below average",
+          trend: (idx.metrics.sharpeRatio >= 1 ? "up" : "neutral") as "up" | "neutral",
+          accentColor: "border-t-blue-500",
+          description: "Risk-adjusted return",
+        },
+        {
+          label: "Max Drawdown",
+          value: `${idx.metrics.maxDrawdown}%`,
+          subvalue: "Backtest peak-to-trough",
+          trend: "down" as const,
+          accentColor: "border-t-red-500",
+          description: "Peak-to-trough",
+        },
+        {
+          label: "Annual Turnover",
+          value: `${idx.metrics.turnover}%`,
+          subvalue: capitalize(idx.strategy.rebalanceFrequency.replace("_", "-")) + " rebalance",
+          trend: "neutral" as const,
+          accentColor: "border-t-violet-500",
+          description: "Portfolio efficiency",
+        },
+      ]
+    : DEFAULT_METRICS;
+
+  const indexName     = idx?.name  ?? "AI Infrastructure Index";
+  const indexTicker   = idx?.ticker ?? "AIIX";
+  const holdingCount  = idx?.holdings.length ?? 12;
+  const rebalLabel    = idx ? capitalize(idx.strategy.rebalanceFrequency.replace("_", "-")) : "Quarterly";
+  const tiltLabel     = idx?.strategy.factorTilts[0] ? capitalize(idx.strategy.factorTilts[0].replace("_", " ")) : "Momentum";
+
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl font-bold text-slate-100">AI Infrastructure Index</h1>
-            <Badge variant="cyan">AIIX</Badge>
+            <h1 className="text-2xl font-bold text-slate-100">{indexName}</h1>
+            <Badge variant="cyan">{indexTicker}</Badge>
             <Badge variant="success">Live</Badge>
           </div>
           <p className="text-sm text-slate-400">
-            12 constituents · Quarterly rebalance · Momentum tilt · As of Apr 30, 2026
+            {holdingCount} constituents · {rebalLabel} rebalance · {tiltLabel} tilt · As of Apr 30, 2026
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -97,7 +129,7 @@ export default function DashboardPage() {
       {/* Performance chart */}
       <PerformanceChart />
 
-      {/* Bottom grid: table full width, then factor + sector side by side */}
+      {/* Holdings table */}
       <HoldingsTable />
 
       <div className="grid lg:grid-cols-2 gap-6">
@@ -105,7 +137,6 @@ export default function DashboardPage() {
         <SectorAllocation />
       </div>
 
-      {/* Rebalance panel */}
       <RebalancePanel />
     </div>
   );
