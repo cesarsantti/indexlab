@@ -128,6 +128,15 @@ function BuilderContent() {
   const [factorTilt, setFactorTilt] = useState("momentum");
   const [generating, setGenerating] = useState(false);
 
+  // One-time mount: consume prompt stored by ETF Analyzer handoff
+  useEffect(() => {
+    const stored = localStorage.getItem("indexlab_builder_prompt");
+    if (stored && !initialPrompt) {
+      localStorage.removeItem("indexlab_builder_prompt");
+      setPrompt(stored);
+    }
+  }, [initialPrompt]);
+
   useEffect(() => {
     if (prompt.trim().length < 8) {
       setParsingLoading(false);
